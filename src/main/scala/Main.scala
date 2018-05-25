@@ -115,7 +115,28 @@ trait Stream[+A] {
 
   def find(p: A => Boolean): Option[A] = filter(p).headOption
 
+  def map2[B](f: A => B): Stream[B] = unfold(this) {
+    case Empty => None
+    case Cons(h, t) => Some((f(h()), t()))
+  }
 
+  def take2(n: Int): Stream[A] = unfold((this, n)) {
+    case (Empty, _) => None
+    case (_, n) if n <= 0 => None
+    case (Cons(h, t), n) => Some((h(), (t(), n - 1)))
+  }
+
+  def takeWhile3(p: A => Boolean): Stream[A] = ???
+
+  def zipWith[B](other: Stream[B]): Stream[(A, B)] = ???
+
+  def zipAll[B](other: Stream[B]): Stream[(Option[A], Option[B])] = ???
+
+  def startsWith[A](s: Stream[A]): Boolean = ???
+
+  def tails: Stream[Stream[A]] = ???
+
+  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] = ???
 }
 
 case object Empty extends Stream[Nothing]

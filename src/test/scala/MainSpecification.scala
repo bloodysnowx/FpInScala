@@ -116,4 +116,26 @@ object MainSpecification extends Properties("Stream") {
     from(a).take(n).toList == unfold(a)(x => Some((x, x + 1))).take(n).toList
     fibs().take(n).toList == unfold((0, 1))({ case (x, y) => Some(x, (y, x + y)) }).take(n).toList
   }
+
+  property("map2") = forAll { (l: Stream[Int], i: Int) =>
+    createP(i).forall(p => l.map2(p).toList == l.toList.map(p))
+  }
+
+  property("take2") = forAll { (l: Stream[Int], i: Int) =>
+    l.take2(i).toList == l.toList.take(i)
+  }
+
+  property("takeWhile3") = forAll { (l: Stream[Int], i: Int) =>
+    createP(i).forall(p => l.takeWhile3(p).toList == l.toList.takeWhile(p))
+  }
+
+  property("zipWith") = ???
+
+  property("zipAll") = ???
+
+  property("startsWith") = ???
+
+  property("tails") = ???
+
+  property("scanRight") = ???
 }
