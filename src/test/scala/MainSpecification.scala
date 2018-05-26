@@ -44,8 +44,8 @@ object MainSpecification extends Properties("Stream") {
   }
 
   property("foldRight") = forAll { (l: Stream[Int], i: Int) =>
-    l.foldRight(i)((a, b) => a + b) == l.toList.foldRight(i)((a, b) => a + b)
-    l.foldRight(i)((a, b) => a * b) == l.toList.foldRight(i)((a, b) => a * b)
+    l.foldRight(i)((a, b) => a + b) == l.toList.foldRight(i)((a, b) => a + b) &&
+      l.foldRight(i)((a, b) => a * b) == l.toList.foldRight(i)((a, b) => a * b)
   }
 
   property("exists2") = forAll { (l: Stream[Int], i: Int) =>
@@ -111,9 +111,21 @@ object MainSpecification extends Properties("Stream") {
 
   property("unfold") = forAll { (a: SmallInt, b: SmallInt, n: SmallInt) =>
     unfold(a)(s => Some((s, s + b))).drop(n).headOption.get == a + b * n
+  }
+
+  property("unfold_ones") = forAll { (a: SmallInt, b: SmallInt, n: SmallInt) =>
     ones.take(n).toList == unfold(a)(_ => Some((1, a))).take(n).toList
+  }
+
+  property("unfold_constant") = forAll { (a: SmallInt, b: SmallInt, n: SmallInt) =>
     constant(a).take(n).toList == unfold(b)(_ => Some(a, b)).take(n).toList
+  }
+
+  property("unfold_from") = forAll { (a: SmallInt, b: SmallInt, n: SmallInt) =>
     from(a).take(n).toList == unfold(a)(x => Some((x, x + 1))).take(n).toList
+  }
+
+  property("unfold_fibs") = forAll { (a: SmallInt, b: SmallInt, n: SmallInt) =>
     fibs().take(n).toList == unfold((0, 1))({ case (x, y) => Some(x, (y, x + y)) }).take(n).toList
   }
 
@@ -129,13 +141,32 @@ object MainSpecification extends Properties("Stream") {
     createP(i).forall(p => l.takeWhile3(p).toList == l.toList.takeWhile(p))
   }
 
-  property("zipWith") = ???
+  property("zipWith") = forAll { (l: Stream[Int], m: Stream[Int]) =>
+    l.zipWith(m).toList == l.toList.zip(m.toList)
+  }
 
-  property("zipAll") = ???
+  property("zipAll") = forAll { (l: Stream[Int], m: Stream[Int]) =>
+    l.zipAll(m).toList == l.toList.map(Some.apply).zipAll(m.toList.map(Some.apply), None, None)
+  }
 
-  property("startsWith") = ???
+  property("startsWith") = forAll { (l: Stream[Int], m: Stream[Int], i: Int) =>
+    l.startsWith(l) == l.toList.startsWith(l.toList) &&
+      l.startsWith(m) == l.toList.startsWith(m.toList) &&
+      m.startsWith(l) == m.toList.startsWith(l.toList) &&
+      m.startsWith(m) == m.toList.startsWith(m.toList) &&
+      l.startsWith(l.take(i)) == true &&
+      m.startsWith(m.take(i)) == true
+  }
 
-  property("tails") = ???
+  property("tails") = forAll { l: Stream[Int] =>
+    l.tails.map(_.toList).toList == l.toList.tails.toList
+  }
 
-  property("scanRight") = ???
+  property("scanRight") = forAll { l: Stream[Int] =>
+    l.scanRight(0)(_ + _).toList == l.toList.scanRight(0)(_ + _)
+  }
+
+  property("scanRight2") = forAll { l: Stream[Int] =>
+    l.scanRight2(0)(_ + _).toList == l.toList.scanRight(0)(_ + _)
+  }
 }

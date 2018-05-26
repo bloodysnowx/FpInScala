@@ -33,6 +33,8 @@ object Main extends App {
   println(ones.forAll(_ != 1))
 
   println(unfold(1)(s => Some((s + 2, s + 2))).take(5).toList)
+
+  println(a.tails.map(_.toList).toList)
 }
 
 trait Stream[+A] {
@@ -126,17 +128,43 @@ trait Stream[+A] {
     case (Cons(h, t), n) => Some((h(), (t(), n - 1)))
   }
 
-  def takeWhile3(p: A => Boolean): Stream[A] = ???
+  def takeWhile3(p: A => Boolean): Stream[A] = unfold(this) {
+    case Cons(h, t) if p(h()) => Some((h(), t()))
+    case _ => None
+  }
 
-  def zipWith[B](other: Stream[B]): Stream[(A, B)] = ???
+  def zipWith[B](other: Stream[B]): Stream[(A, B)] = unfold((this, other)) {
+    case (Cons(aH, aT), Cons(bH, bT)) => Some((aH(), bH()), (aT(), bT()))
+    case _ => None
+  }
 
-  def zipAll[B](other: Stream[B]): Stream[(Option[A], Option[B])] = ???
+  def zipAll[B](other: Stream[B]): Stream[(Option[A], Option[B])] = unfold((this, other)) {
+    case (Cons(aH, aT), Cons(bH, bT)) => Some((Some(aH()), Some(bH())), (aT(), bT()))
+    case (Cons(aH, aT), Empty) => Some((Some(aH()), None), (aT(), Empty))
+    case (Empty, Cons(bH, bT)) => Some((None, Some(bH())), (Empty, bT()))
+    case _ => None
+  }
 
-  def startsWith[A](s: Stream[A]): Boolean = ???
+  def startsWith[A](s: Stream[A]): Boolean = zipAll(s).forAll{
+    case (Some(a), Some(b)) => a == b
+    case (_, None) => true
+    case (None, Some(_)) => false
+  }
 
-  def tails: Stream[Stream[A]] = ???
+  def tails: Stream[Stream[A]] = unfold(this)({
+    case Empty => None
+    case Cons(h, t) => Some(Cons(h, t), t())
+  }).append(Stream(Empty))
 
-  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] = ???
+  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] = tails.map { s =>
+    s.foldRight(z)(f)
+  }
+
+  def scanRight2[B](z: B)(f: (A, => B) => B): Stream[B] = foldRight((z, Stream(z)))((a, p0) => {
+    lazy val p1 = p0
+    val b2 = f(a, p1._1)
+    (b2, cons(b2, p1._2))
+  })._2
 }
 
 case object Empty extends Stream[Nothing]
